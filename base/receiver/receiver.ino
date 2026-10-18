@@ -6,23 +6,6 @@ void setup() {
   SAT.begin(9600);
   pinMode(12, OUTPUT);
   pinMode(13, OUTPUT);
-  pinMode(8, OUTPUT);
-}
-
-int eps = 0;
-int t1 = 0;
-int t2 = 0;
-
-void alarm() {
-  t2 = millis();
-  if(t2 - t1 >= (1000/440))
-  {
-    t1 = millis();
-    digitalWrite(8, HIGH);
-  } else {
-    digitalWrite(8, LOW);
-  }
-  
 }
 
 void loop() {
