@@ -1,4 +1,3 @@
-import serial
 import sys
 import time
 import threading
@@ -7,18 +6,21 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import math
 
-class plotState:
-	win		=	None
-	ax		=	None
+class plotArgs:
+	win	=	None
+	ax	=	None
 	line	=	None
 	canvas	=	None
 
 class state:
 	title	=	"default"
-	value	=	None
-	limit	=	0
+	y	=	None
+	x	=	None
+	ylimit	=	0
+	xlimit	=	0
 
 states = []
+avgs = []
 
 stateIndex = 0
 currentState = state()
@@ -27,16 +29,19 @@ colour = "white"
 
 device = '/dev/ttyACM0'
 
-i = 0
+def setAvgState():
+	global currentState
+	global stateIndex
+	global avgs
+	
+	currentState = avgs[stateIndex]
 
-xlim = 10
-ylim = 50
-
-x = []
-y = []
-
-xval = []
-yval = []
+def avgPlot(pltState):
+	s = 0
+	if len(pltState.y) >= 10:
+		for i in range(1, 11):
+			s += pltState.y[len(pltState.y) - i]
+	return s / 10
 
 def cycleState():
 	global stateIndex
@@ -51,83 +56,66 @@ def cycleState():
 	if len(states) != 0:
 		currentState = states[stateIndex]
 
-def plot(pltState):
+def plot(args):
 	global currentState
-
 	global colour
 
-	global i
+	if len(currentState.x) >= 1 and  len(currentState.y) >= 1:
+		n = currentState.x[len(currentState.x)-1]
+		if n > currentState.xlimit:
+			currentState.xlimit = n
 
-	global xlim
-	global ylim
+		args.ax.set_title(currentState.title)
+		y = currentState.y
+		x = currentState.x
+		ylim = currentState.ylimit
+		xlim = currentState.xlimit
 
-	global x
-	global y
+		args.ax.patch.set_facecolor(colour)
+		
+		args.ax.set_ylim(0, ylim)
+		yval = range(0, ylim, 5)
+		args.ax.set_yticks(yval)
+		
+		args.ax.set_xlim(0, xlim)
+		xval = range(0, xlim, 10)
+		args.ax.set_xticks(xval)
 
-	global xval
-	global yval
+		args.line.set_data(x, y)
 
-	if(len(x) != 0):
-		if x[len(x)-1] % 10 == 0:
-			xval.append(x[len(x)-1])
-		if x[len(x)-1] > xlim:
-			pltState.ax.set_xlim(0, len(x)-1)
+		args.canvas.draw_idle()
 
-	pltState.ax.set_title(currentState.title)
-	y = currentState.value
+	args.win.after(16, lambda: plot(args))
 
-	ylim = currentState.limit
-
-	pltState.ax.patch.set_facecolor(colour)
-	pltState.ax.set_ylim(0, ylim)
-
-	yval = range(0, ylim, 5)
-
-	pltState.ax.set_xticks(xval)
-	pltState.ax.set_yticks(yval)
-
-	pltState.line.set_data(x, y)
-
-	pltState.canvas.draw_idle()
-
-	print("------------------")
-	print(y)
-	print(x)
-	print(xlim)
-	print(ylim)
-	print(xval)
-	print(yval)
-	pltState.win.after(16, lambda: plot(pltState))
-
-def loop(win, start, stop):
-	global ready
-	global wait
+def loop(win, start, stop, send):
+	global receiverReady
+	global satteliteWaiting
 	global eps
 
 	eps += 16
 
-	if ready == True and wait == False:
+	if receiverReady and not satteliteWaiting:
 		start.configure(state=NORMAL)
 		stop.configure(state=NORMAL)
+		send.configure(state=NORMAL)
 	else:
 		start.configure(state=DISABLED)
 		stop.configure(state=DISABLED)
+		send.configure(state=DISABLED)
 
-	win.after(16, lambda: loop(win, start, stop))
+	win.after(16, lambda: loop(win, start, stop, send))
 
 def send(msg):
 	global ready
 	global wait
-
+	msg = "{" + msg + "}"
 	print("(OUT):", msg)
 	mySerial.write(msg.encode('utf-8'))
-	ready = False
-	wait = True
 
 def window():
 	print("main window starting...")
 
-	global run
+	global applicationRunning
 
 	fig, ax = plt.subplots()
 	line,   = ax.plot([], [])
@@ -139,20 +127,34 @@ def window():
 	window.minsize(800, 600)
 
 	window.rowconfigure(0, weight=2, minsize = 400)
-	window.rowconfigure(1, weight=1, minsize = 200)
+	window.rowconfigure(1, weight=1, minsize = 40)
+	window.rowconfigure(2, weight=1, minsize = 80)
+	window.rowconfigure(3, weight=1, minsize = 80)
 
 	window.columnconfigure(0, weight=1)
 	window.columnconfigure(1, weight=1)
 	window.columnconfigure(2, weight=1)
+	
+	cmd = Entry()
+	cmd.grid(row=1, column=0, columnspan=3, padx=5, pady=5, sticky=N + S + E + W)
+	
+	startButton = Button(window, text="START", bg='green', fg="white",command=lambda: send("SS:1"))
+	startButton.grid(row=2, column=0, padx=5, pady=5, sticky=N + S + E + W)
 
-	startButton = Button(window, text="START", bg='green', fg="white",command=lambda: send("START"))
-	startButton.grid(row=1, column=0, padx=5, pady=5, sticky=N + S + E + W)
+	stopButton = Button(window, text="STOP", bg='red', fg="white",command=lambda: send("SS:0"))
+	stopButton.grid(row=2, column=1, padx=5, pady=5, sticky=N + S + E + W)
 
-	stopButton = Button(window, text="STOP", bg='red', fg="white",command=lambda: send("STOP"))
-	stopButton.grid(row=1, column=1, padx=5, pady=5, sticky=N + S + E + W)
+	plotButon = Button(window, text="TEMPERATURE /\nHUMIDITY", bg='blue', fg="white",command=cycleState)
+	plotButon.grid(row=2, column=2, padx=5, pady=5, sticky=N + S + E + W)
+	
+	sendButton = Button(window, text="SEND", bg='yellow', fg="black", command=lambda: send(cmd.get()))
+	sendButton.grid(row=3, column=0, padx=5, pady=5, sticky=N + S + E + W)
 
-	plotButon = Button(window, text="PLOT", bg='blue', fg="white",command=cycleState)
-	plotButon.grid(row=1, column=2, padx=5, pady=5, sticky=N + S + E + W)
+	B_Button = Button(window, text="B", bg='grey', fg="white")  
+	B_Button.grid(row=3, column=1, padx=5, pady=5, sticky=N + S + E + W)
+
+	AVG_Buton = Button(window, text="Average", bg='blue', fg="white", command=setAvgState)
+	AVG_Buton.grid(row=3, column=2, padx=5, pady=5, sticky=N + S + E + W)
 
 	picture_frame = LabelFrame(window, text = 'plot')
 	picture_frame.grid(row=0, column=0, columnspan=3, padx=0, pady=0, sticky=N + S + E + W)
@@ -160,78 +162,92 @@ def window():
 	picture_frame.rowconfigure(0, weight=1)
 	picture_frame.columnconfigure(0, weight=1)
 
-	ax.set_xlim(0, xlim)
-	ax.set_ylim(0, ylim)
-
-	ax.set_xticks(xval)
-	ax.set_yticks(yval)
-
 	canvas = FigureCanvasTkAgg(fig, master=picture_frame)
 	canvas.draw()
 
 	canvas_widget = canvas.get_tk_widget()
 	canvas_widget.grid(row=0, column=0, padx=0, pady=0, sticky=N + S + E + W)
 
-	pState = plotState()
+	pArgs = plotArgs()
 
-	pState.win = window
-	pState.ax = ax
-	pState.line = line
-	pState.canvas = canvas
+	pArgs.win = window
+	pArgs.ax = ax
+	pArgs.line = line
+	pArgs.canvas = canvas
 
-	loop(window, startButton, stopButton)
-	plot(pState)
+	loop(window, startButton, stopButton, sendButton)
+	plot(pArgs)
 
 	window.mainloop()
-	run = False
+	applicationRunning = False
 
-init = True
+eps = 1000
 
-"""
+applicationRunning = True
+receiverConnected = False
+receiverReady = False
+satteliteConnected = False
+satteliteReady = False
+satteliteError = False
+
 try:
 	mySerial = serial.Serial(device, 9600)
 except:
 	print(f"could not open '{device}'")
-	init = False
-"""
-
-run = True
-ready = False
-wait = False
-sync = False
-error = False
+	receiverConnected = False
 
 threadRecepcion = threading.Thread (target = window)
 threadRecepcion.start()
 
-eps = 1000
-
 stateTMP = state()
 stateTMP.title = "Temperature"
-stateTMP.value = []
-stateTMP.limit = 50
+stateTMP.y = []
+stateTMP.x = []
+stateTMP.ylimit = 50
+stateTMP.xlimit = 0
+
+stateAVGTMP = state()
+stateAVGTMP.title = "Average Temperature"
+stateAVGTMP.y = []
+stateAVGTMP.x = []
+stateAVGTMP.ylimit = 50
+stateAVGTMP.xlimit = 0
 
 stateHUM = state()
 stateHUM.title = "Humidity"
-stateHUM.value = []
-stateHUM.limit = 100
+stateHUM.y = []
+stateHUM.x = []
+stateHUM.ylimit = 100
+stateHUM.xlimit = 0
+
+stateAVGHUM = state()
+stateAVGHUM.title = "Average Humidity"
+stateAVGHUM.y = []
+stateAVGHUM.x = []
+stateAVGHUM.ylimit = 100
+stateAVGHUM.xlimit = 0
 
 states.append(stateTMP)
 states.append(stateHUM)
 
+avgs.append(stateAVGTMP)
+avgs.append(stateAVGHUM)
+
 currentState = stateTMP
 
-while run and init:
-	x.append(i)
-	i += 1
-	stateTMP.value.append(24)
-	stateHUM.value.append(60)
-	time.sleep(1)
-"""
-	if eps >= 1000:
+while applicationRunning and receiverConnected:
+	if i%10 == 0:
+		stateAVGTMP.x.append(len(stateAVGTMP.x)*10)
+		stateAVGTMP.y.append(avgPlot(stateTMP))
+		
+	if j%10 == 0:
+		stateAVGHUM.x.append(len(stateAVGHUM.x)*10)
+		stateAVGHUM.y.append(avgPlot(stateHUM))
+	
+	if eps >= 5000:
 		eps = 0
-		sync = False
-		wait = False
+		satteliteConnected = False
+		satteliteWaiting = False
 	
 	if mySerial.in_waiting > 0:
 		line = mySerial.readline().decode('utf-8').rstrip()
@@ -240,29 +256,30 @@ while run and init:
 			line = line.strip("{}")
 			match line:
 				case "RDY":
-					ready = True
+					receiverReady = True
 				case "T":
-					sync = True
+					satteliteConnected = True
 				case "R":
-					wait = False
+					satteliteWaiting = False
 				case "ERROR":
-					error = True
+					satteliteError = True
 				case _:
-					error = False
+					satteliteError = False
 					data = line.split(';')
 					for entry in data:
-						match entry:
+						match entry[0]:
 							case "T":
+								i = len(stateTMP.x)
 								T = float(entry.strip("T:"))
-								stateTMP.value.append(T)
+								stateTMP.x.append(i)
+								stateTMP.y.append(T)
 							case "H":
+								j = len(stateHUM.x)
 								H = float(entry.strip("H:"))
-								stateHUM.value.append(H)
-					x.append(i)
-					i = i + 1
+								stateHUM.x.append(j)
+								stateHUM.y.append(H)
 
-		if(sync == True and error == False):
-				colour = "white"
-		else:
-				colour = "red"
-"""
+	if(satteliteConnected and not satteliteError):
+		colour = "white"
+	else:
+		colour = "red"
