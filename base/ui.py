@@ -1,4 +1,5 @@
 import sys
+import serial
 import time
 import threading
 from tkinter import *
@@ -192,6 +193,7 @@ satteliteError = False
 
 try:
 	mySerial = serial.Serial(device, 9600)
+	print(mySerial)
 except:
 	print(f"could not open '{device}'")
 	receiverConnected = False
