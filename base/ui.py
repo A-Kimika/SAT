@@ -35,7 +35,8 @@ def setAvgState():
 	global stateIndex
 	global avgs
 	
-	currentState = avgs[stateIndex]
+	if(len(avgs) == len(states)) and (len(avgs) != 0):
+		currentState = avgs[stateIndex]
 
 def avgPlot(pltState):
 	s = 0
@@ -60,8 +61,8 @@ def cycleState():
 def plot(args):
 	global currentState
 	global colour
-
-	if len(currentState.x) >= 1 and  len(currentState.y) >= 1:
+	
+	if (len(currentState.x) >= 1) and (len(currentState.y) >= 1):
 		n = currentState.x[len(currentState.x)-1]
 		if n > currentState.xlimit:
 			currentState.xlimit = n
@@ -85,7 +86,6 @@ def plot(args):
 		args.line.set_data(x, y)
 
 		args.canvas.draw_idle()
-
 	args.win.after(16, lambda: plot(args))
 
 def loop(win, start, stop, send):
@@ -107,8 +107,8 @@ def loop(win, start, stop, send):
 	win.after(16, lambda: loop(win, start, stop, send))
 
 def send(msg):
-	global ready
-	global wait
+	global satteliteWaiting
+	satteliteWaiting = True
 	msg = "{" + msg + "}"
 	print("(OUT):", msg)
 	mySerial.write(msg.encode('utf-8'))
@@ -182,17 +182,18 @@ def window():
 	window.mainloop()
 	applicationRunning = False
 
-eps = 1000
+eps = 0
 
 applicationRunning = True
 receiverConnected = False
 receiverReady = False
 satteliteConnected = False
-satteliteReady = False
+satteliteWaiting = False
 satteliteError = False
 
 try:
 	mySerial = serial.Serial(device, 9600)
+	receiverConnected = True
 	print(mySerial)
 except:
 	print(f"could not open '{device}'")
@@ -238,48 +239,52 @@ avgs.append(stateAVGHUM)
 currentState = stateTMP
 
 while applicationRunning and receiverConnected:
-	if i%10 == 0:
-		stateAVGTMP.x.append(len(stateAVGTMP.x)*10)
-		stateAVGTMP.y.append(avgPlot(stateTMP))
-		
-	if j%10 == 0:
-		stateAVGHUM.x.append(len(stateAVGHUM.x)*10)
-		stateAVGHUM.y.append(avgPlot(stateHUM))
-	
 	if eps >= 5000:
-		eps = 0
+		print("Sattelite response timeout")
 		satteliteConnected = False
 		satteliteWaiting = False
 	
 	if mySerial.in_waiting > 0:
-		line = mySerial.readline().decode('utf-8').rstrip()
-		print(" (IN):", line)
-		if line.startswith('{') and line.endswith('}'):
-			line = line.strip("{}")
-			match line:
-				case "RDY":
-					receiverReady = True
-				case "T":
-					satteliteConnected = True
-				case "R":
-					satteliteWaiting = False
-				case "ERROR":
-					satteliteError = True
-				case _:
-					satteliteError = False
-					data = line.split(';')
-					for entry in data:
-						match entry[0]:
-							case "T":
-								i = len(stateTMP.x)
-								T = float(entry.strip("T:"))
-								stateTMP.x.append(i)
-								stateTMP.y.append(T)
-							case "H":
-								j = len(stateHUM.x)
-								H = float(entry.strip("H:"))
-								stateHUM.x.append(j)
-								stateHUM.y.append(H)
+		try:
+			line = mySerial.readline().decode('utf-8').rstrip()
+			print(" (IN):", line)
+			if line.startswith('{') and line.endswith('}'):
+				line = line.strip("{}")
+				match line:
+					case "RDY":
+						receiverReady = True
+					case "T":
+						eps = 0
+						satteliteConnected = True
+					case "R":
+						satteliteWaiting = False
+					case "ERROR":
+						satteliteError = True
+					case _:
+						satteliteError = False
+						data = line.split(';')
+						for entry in data:
+							match entry[0]:
+								case "T":
+									i = len(stateTMP.x)
+									T = float(entry.strip("T:"))
+									stateTMP.x.append(i)
+									stateTMP.y.append(T)
+									
+									if len(stateTMP.x)%10 == 0:
+										stateAVGTMP.x.append(len(stateAVGTMP.x)*10)
+										stateAVGTMP.y.append(avgPlot(stateTMP))
+								case "H":
+									j = len(stateHUM.x)
+									H = float(entry.strip("H:"))
+									stateHUM.x.append(j)
+									stateHUM.y.append(H)
+									
+									if len(stateHUM.x)%10 == 0:
+										stateAVGHUM.x.append(len(stateAVGHUM.x)*10)
+										stateAVGHUM.y.append(avgPlot(stateHUM))
+		except:
+			print(f"could not decode input")
 
 	if(satteliteConnected and not satteliteError):
 		colour = "white"
