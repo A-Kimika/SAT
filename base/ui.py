@@ -61,6 +61,8 @@ def cycleState():
 def plot(args):
 	global currentState
 	global colour
+
+	args.ax.patch.set_facecolor(colour)
 	
 	if (len(currentState.x) >= 1) and (len(currentState.y) >= 1):
 		n = currentState.x[len(currentState.x)-1]
@@ -72,8 +74,6 @@ def plot(args):
 		x = currentState.x
 		ylim = currentState.ylimit
 		xlim = currentState.xlimit
-
-		args.ax.patch.set_facecolor(colour)
 		
 		args.ax.set_ylim(0, ylim)
 		yval = range(0, ylim, 5)
