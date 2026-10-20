@@ -27,10 +27,10 @@ void loop() {
     Serial.println(data);
 
     //Empezar transmisión
-      if (data == "START") {
+      if (data == "SS:1") {
         Base.println ("{R}"); //Envia confirmación de que ha recibido el mensaje (para que la estación siga enviando hasta que se confirme)
 
-          while (data != "STOP"){
+          while (data != "SS:0"){
             /*
             if (data.length() > 0)
               data = data.toInt();
@@ -48,19 +48,19 @@ void loop() {
               Base.println("{ERROR}"); 
 
             else { //Enviamos todos los datos
-
+              Base.println ("{T}");
               delay(500);
               digitalWrite(led1, HIGH);
-              Base.print("{");
+              Base.print("{H:");
               Base.print(h);
-              Base.print(";");
+              Base.print(";T:");
               Base.print(t);
               Base.println('}');
               digitalWrite(led1, LOW);}
 
             data = Base.readString();
             data.trim();
-            if (data == "START")
+            if (data == "SS:1")
               Base.println ("{R}");}
 
           Base.println ("{R}");}
