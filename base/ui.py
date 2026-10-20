@@ -109,7 +109,7 @@ def loop(win, start, stop, send):
 def send(msg):
 	global satteliteWaiting
 	satteliteWaiting = True
-	msg = "{" + msg + "}"
+	#msg = "{" + msg + "}"
 	print("(OUT):", msg)
 	mySerial.write(msg.encode('utf-8'))
 
@@ -243,6 +243,7 @@ while applicationRunning and receiverConnected:
 		print("Sattelite response timeout")
 		satteliteConnected = False
 		satteliteWaiting = False
+		eps = 0
 	
 	if mySerial.in_waiting > 0:
 		try:

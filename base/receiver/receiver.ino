@@ -20,7 +20,7 @@ void loop() {
       data.trim();
       if(data == "{ERROR}") {
         digitalWrite(13, HIGH);
-        alarm();
+        delay(100);
       } else {
         digitalWrite(13, LOW);
       }
