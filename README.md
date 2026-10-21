@@ -1,8 +1,6 @@
 # SAT Grupo 2
 
-## VÍDEO
-
-https://drive.google.com/file/d/1hvOzGaZAGr3G5iYpnstDdow7pwcVJ2ZW/view?usp=sharing
+## [VIDEO](https://drive.google.com/file/d/1hvOzGaZAGr3G5iYpnstDdow7pwcVJ2ZW/view?usp=sharing)
 
 ## INTRODUCCIÓN
 
