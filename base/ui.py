@@ -135,10 +135,14 @@ def window():
 	window.columnconfigure(0, weight=1)
 	window.columnconfigure(1, weight=1)
 	window.columnconfigure(2, weight=1)
-	
+	window.columnconfigure(3, weight=1)
+
 	cmd = Entry()
-	cmd.grid(row=1, column=0, columnspan=3, padx=5, pady=5, sticky=N + S + E + W)
-	
+	cmd.grid(row=1, column=0, columnspan=2, padx=5, pady=5, sticky=N + S + E + W)
+		
+	infoLabel = Label(window, text = "Commands:\nv:'n' (bps)\nss:'1/0' (start/stop)", font=("Courier", 8))
+	infoLabel.grid(row=0, column=3, rowspan=4, padx=5, pady=5, sticky=N)
+
 	startButton = Button(window, text="START", bg='green', fg="white",command=lambda: send("SS:1"))
 	startButton.grid(row=2, column=0, padx=5, pady=5, sticky=N + S + E + W)
 
@@ -149,7 +153,10 @@ def window():
 	plotButon.grid(row=2, column=2, padx=5, pady=5, sticky=N + S + E + W)
 	
 	sendButton = Button(window, text="SEND", bg='yellow', fg="black", command=lambda: send(cmd.get()))
-	sendButton.grid(row=3, column=0, padx=5, pady=5, sticky=N + S + E + W)
+	sendButton.grid(row=1, column=2, padx=5, pady=5, sticky=N + S + E + W)
+
+	A_Button = Button(window, text="A", bg='grey', fg="white")  
+	A_Button.grid(row=3, column=0, padx=5, pady=5, sticky=N + S + E + W)
 
 	B_Button = Button(window, text="B", bg='grey', fg="white")  
 	B_Button.grid(row=3, column=1, padx=5, pady=5, sticky=N + S + E + W)
@@ -239,7 +246,7 @@ avgs.append(stateAVGHUM)
 currentState = stateTMP
 
 while applicationRunning and receiverConnected:
-	if eps >= 5000:
+	if eps >= 2500:
 		print("Sattelite response timeout")
 		satteliteConnected = False
 		satteliteWaiting = False
