@@ -23,6 +23,8 @@ class state:
 states = []
 avgs = []
 
+pt = time.monotonic()
+
 stateIndex = 0
 currentState = state()
 
@@ -92,8 +94,10 @@ def loop(win, start, stop, send):
 	global receiverReady
 	global satteliteWaiting
 	global eps
+	global pt
 
-	eps += 16
+	eps += (time.monotonic() - pt)
+	pt = time.monotonic()
 
 	if receiverReady and not satteliteWaiting:
 		start.configure(state=NORMAL)
@@ -109,7 +113,6 @@ def loop(win, start, stop, send):
 def send(msg):
 	global satteliteWaiting
 	satteliteWaiting = True
-	#msg = "{" + msg + "}"
 	print("(OUT):", msg)
 	mySerial.write(msg.encode('utf-8'))
 
@@ -140,7 +143,7 @@ def window():
 	cmd = Entry()
 	cmd.grid(row=1, column=0, columnspan=2, padx=5, pady=5, sticky=N + S + E + W)
 		
-	infoLabel = Label(window, text = "Commands:\nv:'n' (bps)\nss:'1/0' (start/stop)", font=("Courier", 8))
+	infoLabel = Label(window, text = "Commands:\nV:'n' (secs)\nss:'1/0' (start/stop)", font=("Courier", 8))
 	infoLabel.grid(row=0, column=3, rowspan=4, padx=5, pady=5, sticky=N)
 
 	startButton = Button(window, text="START", bg='green', fg="white",command=lambda: send("SS:1"))
@@ -149,7 +152,7 @@ def window():
 	stopButton = Button(window, text="STOP", bg='red', fg="white",command=lambda: send("SS:0"))
 	stopButton.grid(row=2, column=1, padx=5, pady=5, sticky=N + S + E + W)
 
-	plotButon = Button(window, text="TEMPERATURE /\nHUMIDITY", bg='blue', fg="white",command=cycleState)
+	plotButon = Button(window, text="Next Plot", bg='blue', fg="white",command=cycleState)
 	plotButon.grid(row=2, column=2, padx=5, pady=5, sticky=N + S + E + W)
 	
 	sendButton = Button(window, text="SEND", bg='yellow', fg="black", command=lambda: send(cmd.get()))
@@ -237,16 +240,32 @@ stateAVGHUM.x = []
 stateAVGHUM.ylimit = 100
 stateAVGHUM.xlimit = 0
 
+stateDistance = state()
+stateDistance.title = "Distance"
+stateDistance.y = []
+stateDistance.x = []
+stateDistance.ylimit = 100
+stateDistance.xlimit = 0
+
+stateAVGDistance = state()
+stateAVGDistance.title = "Average Distance"
+stateAVGDistance.y = []
+stateAVGDistance.x = []
+stateAVGDistance.ylimit = 100
+stateAVGDistance.xlimit = 0
+
 states.append(stateTMP)
 states.append(stateHUM)
+states.append(stateDistance)
 
 avgs.append(stateAVGTMP)
 avgs.append(stateAVGHUM)
+avgs.append(stateAVGDistance)
 
 currentState = stateTMP
 
 while applicationRunning and receiverConnected:
-	if eps >= 2500:
+	if eps >= 5:
 		print("Sattelite response timeout")
 		satteliteConnected = False
 		satteliteWaiting = False
@@ -291,6 +310,15 @@ while applicationRunning and receiverConnected:
 									if len(stateHUM.x)%10 == 0:
 										stateAVGHUM.x.append(len(stateAVGHUM.x)*10)
 										stateAVGHUM.y.append(avgPlot(stateHUM))
+								case "D":
+									j = len(stateDistance.x)
+									D = float(entry.strip("D:"))
+									stateDistance.x.append(j)
+									stateDistance.y.append(D)
+									
+									if len(stateDistance.x)%10 == 0:
+										stateAVGDistance.x.append(len(stateAVGDistance.x)*10)
+										stateAVGDistance.y.append(avgPlot(stateDistance))
 		except:
 			print(f"could not decode input")
 
