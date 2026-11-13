@@ -12,19 +12,18 @@ void loop() {
   Serial.println("{RDY}");
   String cmd = Serial.readString();
 
+  if(cmd == "ARM:1") {
+      digitalWrite(13, HIGH);
+  }
+  
+  if(cmd == "ARM:0") {
+      digitalWrite(13, LOW);
+  }
+
   if (SAT.available()) {
     digitalWrite(12, HIGH);
-      String data = SAT.readString();
+      String data = SAT.readString();  
       Serial.print(data);
-      
-      data.trim();
-      if(data == "{ERROR}") {
-        digitalWrite(13, HIGH);
-        delay(100);
-      } else {
-        digitalWrite(13, LOW);
-      }
-        
     digitalWrite(12, LOW);
   }
   

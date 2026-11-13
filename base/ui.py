@@ -266,6 +266,7 @@ currentState = stateTMP
 
 while applicationRunning and receiverConnected:
 	if eps >= 5:
+		send("ARM:1")
 		print("Sattelite response timeout")
 		satteliteConnected = False
 		satteliteWaiting = False
@@ -286,12 +287,22 @@ while applicationRunning and receiverConnected:
 					case "R":
 						satteliteWaiting = False
 					case "ERROR":
+						send("ARM:1")
 						satteliteError = True
 					case _:
+						send("ARM:0")
 						satteliteError = False
 						data = line.split(';')
 						for entry in data:
 							match entry[0]:
+								case "M":
+									match entry[1]:
+										case "T":
+											AT = float(entry.strip("MT:"))
+											print("got avg temp:")
+										case "H":
+											AH = float(entry.strip("MH:"))
+											print("got avg hum:")
 								case "T":
 									i = len(stateTMP.x)
 									T = float(entry.strip("T:"))
