@@ -21,24 +21,30 @@ class state:
 	xlimit	=	0
 
 states = []
-avgs = []
 
 pt = time.monotonic()
 
 stateIndex = 0
 currentState = state()
 
+avgCalculation = "local"
+
 colour = "white"
 
 device = '/dev/ttyACM0'
 
-def setAvgState():
-	global currentState
-	global stateIndex
-	global avgs
+def setAvgState(btn):
+	global avgCalculation
 	
-	if(len(avgs) == len(states)) and (len(avgs) != 0):
-		currentState = avgs[stateIndex]
+	if avgCalculation == "local":
+		avgCalculation = "remote"
+		send("CMT:1",True)
+		btn.configure(text = "AVERAGE (remote)", bg='orange')
+
+	elif avgCalculation == "remote":
+		avgCalculation = "local"	
+		send("CMT:0",True)
+		btn.configure(text = "AVERAGE   (local)", bg='blue')
 
 def avgPlot(pltState):
 	s = 0
@@ -93,10 +99,10 @@ def plot(args):
 def loop(win, start, stop, send):
 	global receiverReady
 	global satteliteWaiting
-	global eps
+	global responseTimer
 	global pt
 
-	eps += (time.monotonic() - pt)
+	responseTimer += (time.monotonic() - pt)
 	pt = time.monotonic()
 
 	if receiverReady and not satteliteWaiting:
@@ -146,7 +152,7 @@ def window():
 	cmd = Entry()
 	cmd.grid(row=1, column=0, columnspan=2, padx=5, pady=5, sticky=N + S + E + W)
 		
-	infoLabel = Label(window, text = "Commands:\nV:'n' (secs)\nss:'1/0' (start/stop)", font=("Courier", 8))
+	infoLabel = Label(window, text = "Commands:\nV:'n' (secs)", font=("Courier", 8))
 	infoLabel.grid(row=0, column=3, rowspan=4, padx=5, pady=5, sticky=N)
 
 	startButton = Button(window, text="START", bg='green', fg="white",command=lambda: send("SS:1", True))
@@ -155,7 +161,7 @@ def window():
 	stopButton = Button(window, text="STOP", bg='red', fg="white",command=lambda: send("SS:0", True))
 	stopButton.grid(row=2, column=1, padx=5, pady=5, sticky=N + S + E + W)
 
-	plotButon = Button(window, text="Next Plot", bg='blue', fg="white",command=cycleState)
+	plotButon = Button(window, text="NEXT PLOT", bg='purple', fg="white",command=cycleState)
 	plotButon.grid(row=2, column=2, padx=5, pady=5, sticky=N + S + E + W)
 	
 	sendButton = Button(window, text="SEND", bg='yellow', fg="black", command=lambda: send(cmd.get(), True))
@@ -167,8 +173,8 @@ def window():
 	B_Button = Button(window, text="B", bg='grey', fg="white")  
 	B_Button.grid(row=3, column=1, padx=5, pady=5, sticky=N + S + E + W)
 
-	AVG_Buton = Button(window, text="Average", bg='blue', fg="white", command=setAvgState)
-	AVG_Buton.grid(row=3, column=2, padx=5, pady=5, sticky=N + S + E + W)
+	AVG_Button = Button(window, text="AVERAGE  (local)", bg='blue', fg="white", command=lambda: setAvgState(AVG_Button))
+	AVG_Button.grid(row=3, column=2, padx=5, pady=5, sticky=N + S + E + W)
 
 	picture_frame = LabelFrame(window, text = 'plot')
 	picture_frame.grid(row=0, column=0, columnspan=3, padx=0, pady=0, sticky=N + S + E + W)
@@ -195,7 +201,7 @@ def window():
 	window.mainloop()
 	applicationRunning = False
 
-eps = 0
+responseTimer = 0
 
 applicationRunning = True
 receiverConnected = False
@@ -261,20 +267,20 @@ states.append(stateTMP)
 states.append(stateHUM)
 states.append(stateDistance)
 
-avgs.append(stateAVGTMP)
-avgs.append(stateAVGHUM)
-avgs.append(stateAVGDistance)
+states.append(stateAVGTMP)
+states.append(stateAVGHUM)
+states.append(stateAVGDistance)
 
 currentState = stateTMP
 
 while applicationRunning and receiverConnected:
-	if eps >= 5:
+	if responseTimer >= 5:
 		send("ARM:1", False)
 		print("Sattelite response timeout")
 		satteliteConnected = False
 		satteliteWaiting = False
-		eps = 0
-	
+		responseTimer = 0
+
 	if mySerial.in_waiting > 0:
 		try:
 			line = mySerial.readline().decode('utf-8').rstrip()
@@ -285,7 +291,7 @@ while applicationRunning and receiverConnected:
 					case "RDY":
 						receiverReady = True
 					case "T":
-						eps = 0
+						responseTimer = 0
 						satteliteConnected = True
 					case "R":
 						satteliteWaiting = False
@@ -302,36 +308,36 @@ while applicationRunning and receiverConnected:
 									match entry[1]:
 										case "T":
 											AT = float(entry.strip("MT:"))
-											print("got avg temp:")
+											stateAVGTMP.x.append(len(stateAVGTMP.x))
+											stateAVGTMP.y.append(AT)
 										case "H":
 											AH = float(entry.strip("MH:"))
-											print("got avg hum:")
+											stateAVGHUM.x.append(len(stateAVGHUM.x))
+											stateAVGHUM.y.append(AH)
 								case "T":
 									i = len(stateTMP.x)
 									T = float(entry.strip("T:"))
 									stateTMP.x.append(i)
 									stateTMP.y.append(T)
-									
-									if len(stateTMP.x)%10 == 0:
-										stateAVGTMP.x.append(len(stateAVGTMP.x)*10)
+									if avgCalculation == "local":
+										stateAVGTMP.x.append(len(stateAVGTMP.x))
 										stateAVGTMP.y.append(avgPlot(stateTMP))
+
 								case "H":
 									j = len(stateHUM.x)
 									H = float(entry.strip("H:"))
 									stateHUM.x.append(j)
 									stateHUM.y.append(H)
-									
-									if len(stateHUM.x)%10 == 0:
-										stateAVGHUM.x.append(len(stateAVGHUM.x)*10)
+									if avgCalculation == "local":
+										stateAVGHUM.x.append(len(stateAVGHUM.x))
 										stateAVGHUM.y.append(avgPlot(stateHUM))
 								case "D":
 									j = len(stateDistance.x)
 									D = float(entry.strip("D:"))
 									stateDistance.x.append(j)
 									stateDistance.y.append(D)
-									
-									if len(stateDistance.x)%10 == 0:
-										stateAVGDistance.x.append(len(stateAVGDistance.x)*10)
+									if avgCalculation == "local":
+										stateAVGDistance.x.append(len(stateAVGDistance.x))
 										stateAVGDistance.y.append(avgPlot(stateDistance))
 		except:
 			print(f"could not decode input")

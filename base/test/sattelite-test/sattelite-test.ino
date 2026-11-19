@@ -58,6 +58,9 @@ void loop() {
     Serial.print(";");
       Serial.print("T:");
       Serial.print(cos(i) * 25 + 25);
+    Serial.print(";");
+      Serial.print("D:");
+      Serial.print(tan(i) + 50);
     Serial.println('}');
 
     if(sendAvg) {
