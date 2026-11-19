@@ -7,6 +7,8 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import math
 
+# window and plot data
+
 class plotArgs:
 	win	=	None
 	ax	=	None
@@ -19,6 +21,8 @@ class state:
 	x	=	None
 	ylimit	=	0
 	xlimit	=	0
+
+# initial variables
 
 states = []
 
@@ -33,6 +37,9 @@ colour = "white"
 
 device = '/dev/ttyACM0'
 
+# switch for the average calculation handling
+# accepts the button to update the text with the current status
+
 def setAvgState(btn):
 	global avgCalculation
 	
@@ -46,12 +53,16 @@ def setAvgState(btn):
 		send("CMT:0",True)
 		btn.configure(text = "AVERAGE   (local)", bg='blue')
 
+# average of the last 10 values
+
 def avgPlot(pltState):
 	s = 0
 	if len(pltState.y) >= 10:
 		for i in range(1, 11):
 			s += pltState.y[len(pltState.y) - i]
 	return s / 10
+
+# switch for the currently shown plot
 
 def cycleState():
 	global stateIndex
@@ -65,6 +76,8 @@ def cycleState():
 
 	if len(states) != 0:
 		currentState = states[stateIndex]
+
+# draw the currently shown plot, accepts window data structure
 
 def plot(args):
 	global currentState
@@ -96,6 +109,8 @@ def plot(args):
 		args.canvas.draw_idle()
 	args.win.after(16, lambda: plot(args))
 
+# main window loop
+
 def loop(win, start, stop, send):
 	global receiverReady
 	global satteliteWaiting
@@ -116,6 +131,9 @@ def loop(win, start, stop, send):
 
 	win.after(16, lambda: loop(win, start, stop, send))
 
+# send a message over serial, terminating ';' is added at the end
+# accepts the message string and the wait flag
+
 def send(msg, wait):
 	global satteliteWaiting
 	msg = msg + ";"
@@ -124,6 +142,8 @@ def send(msg, wait):
 		satteliteWaiting = wait
 	print("(OUT):", msg)
 	mySerial.write(msg.encode('utf-8'))
+
+# window initialisation
 
 def window():
 	print("main window starting...")
@@ -201,6 +221,8 @@ def window():
 	window.mainloop()
 	applicationRunning = False
 
+# runtime variables
+
 responseTimer = 0
 
 applicationRunning = True
@@ -209,6 +231,8 @@ receiverReady = False
 satteliteConnected = False
 satteliteWaiting = False
 satteliteError = False
+
+# receiver connection
 
 try:
 	mySerial = serial.Serial(device, 9600)
@@ -220,6 +244,8 @@ except:
 
 threadRecepcion = threading.Thread (target = window)
 threadRecepcion.start()
+
+# plot data initialisation
 
 stateTMP = state()
 stateTMP.title = "Temperature"
@@ -272,6 +298,8 @@ states.append(stateAVGHUM)
 states.append(stateAVGDistance)
 
 currentState = stateTMP
+
+# main communication loop
 
 while applicationRunning and receiverConnected:
 	if responseTimer >= 5:
