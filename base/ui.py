@@ -110,9 +110,12 @@ def loop(win, start, stop, send):
 
 	win.after(16, lambda: loop(win, start, stop, send))
 
-def send(msg):
+def send(msg, wait):
 	global satteliteWaiting
-	satteliteWaiting = True
+	msg = msg + ";"
+
+	if wait:
+		satteliteWaiting = wait
 	print("(OUT):", msg)
 	mySerial.write(msg.encode('utf-8'))
 
@@ -146,16 +149,16 @@ def window():
 	infoLabel = Label(window, text = "Commands:\nV:'n' (secs)\nss:'1/0' (start/stop)", font=("Courier", 8))
 	infoLabel.grid(row=0, column=3, rowspan=4, padx=5, pady=5, sticky=N)
 
-	startButton = Button(window, text="START", bg='green', fg="white",command=lambda: send("SS:1"))
+	startButton = Button(window, text="START", bg='green', fg="white",command=lambda: send("SS:1", True))
 	startButton.grid(row=2, column=0, padx=5, pady=5, sticky=N + S + E + W)
 
-	stopButton = Button(window, text="STOP", bg='red', fg="white",command=lambda: send("SS:0"))
+	stopButton = Button(window, text="STOP", bg='red', fg="white",command=lambda: send("SS:0", True))
 	stopButton.grid(row=2, column=1, padx=5, pady=5, sticky=N + S + E + W)
 
 	plotButon = Button(window, text="Next Plot", bg='blue', fg="white",command=cycleState)
 	plotButon.grid(row=2, column=2, padx=5, pady=5, sticky=N + S + E + W)
 	
-	sendButton = Button(window, text="SEND", bg='yellow', fg="black", command=lambda: send(cmd.get()))
+	sendButton = Button(window, text="SEND", bg='yellow', fg="black", command=lambda: send(cmd.get(), True))
 	sendButton.grid(row=1, column=2, padx=5, pady=5, sticky=N + S + E + W)
 
 	A_Button = Button(window, text="A", bg='grey', fg="white")  
@@ -266,7 +269,7 @@ currentState = stateTMP
 
 while applicationRunning and receiverConnected:
 	if eps >= 5:
-		send("ARM:1")
+		send("ARM:1", False)
 		print("Sattelite response timeout")
 		satteliteConnected = False
 		satteliteWaiting = False
@@ -287,10 +290,10 @@ while applicationRunning and receiverConnected:
 					case "R":
 						satteliteWaiting = False
 					case "ERROR":
-						send("ARM:1")
+						send("ARM:1", False)
 						satteliteError = True
 					case _:
-						send("ARM:0")
+						send("ARM:0", False)
 						satteliteError = False
 						data = line.split(';')
 						for entry in data:
