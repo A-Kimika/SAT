@@ -30,7 +30,7 @@ void loop() {
       } else if(buf[i] == "ARM:0") {
           digitalWrite(13, LOW);
       } else {
-        SAT.println(cmd);
+        SAT.println(buf[i]);
       };
     };
   };

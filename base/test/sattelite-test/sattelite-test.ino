@@ -47,6 +47,12 @@ void loop() {
         
       if(buf[i] == "CMT:0")
         sendAvg = false;
+
+      if(buf[i] == "ARM:1")
+        digitalWrite(13, HIGH);    
+        
+      if(buf[i] == "ARM:0")
+        digitalWrite(13, LOW);    
     };
   };
   if (timer > 1000) {

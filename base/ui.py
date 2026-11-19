@@ -26,6 +26,8 @@ class state:
 
 states = []
 
+tmpAlarm = 100
+
 pt = time.monotonic()
 
 stateIndex = 0
@@ -115,9 +117,12 @@ def loop(win, start, stop, send):
 	global receiverReady
 	global satteliteWaiting
 	global responseTimer
+	global alarmTimer
 	global pt
 
-	responseTimer += (time.monotonic() - pt)
+	dt = (time.monotonic() - pt)
+	responseTimer += dt
+	alarmTimer += dt
 	pt = time.monotonic()
 
 	if receiverReady and not satteliteWaiting:
@@ -130,6 +135,16 @@ def loop(win, start, stop, send):
 		send.configure(state=DISABLED)
 
 	win.after(16, lambda: loop(win, start, stop, send))
+
+# handle command line input
+
+def command(cmd):
+	global tmpAlarm
+	if cmd.startswith("setPeriod:"):
+		send("V:" + cmd.strip("setPeriod:"), True)
+
+	if cmd.startswith("setAlarm.T:"):
+		tmpAlarm = float(cmd.strip("setAlarm.T:"))
 
 # send a message over serial, terminating ';' is added at the end
 # accepts the message string and the wait flag
@@ -172,7 +187,7 @@ def window():
 	cmd = Entry()
 	cmd.grid(row=1, column=0, columnspan=2, padx=5, pady=5, sticky=N + S + E + W)
 		
-	infoLabel = Label(window, text = "Commands:\nV:'n' (secs)", font=("Courier", 8))
+	infoLabel = Label(window, text = "Commands:\nsetPeriod:'n' (secs)\nsetAlarm.T:'n' (C°)", font=("Courier", 8))
 	infoLabel.grid(row=0, column=3, rowspan=4, padx=5, pady=5, sticky=N)
 
 	startButton = Button(window, text="START", bg='green', fg="white",command=lambda: send("SS:1", True))
@@ -184,7 +199,7 @@ def window():
 	plotButon = Button(window, text="NEXT PLOT", bg='purple', fg="white",command=cycleState)
 	plotButon.grid(row=2, column=2, padx=5, pady=5, sticky=N + S + E + W)
 	
-	sendButton = Button(window, text="SEND", bg='yellow', fg="black", command=lambda: send(cmd.get(), True))
+	sendButton = Button(window, text="EXEC", bg='yellow', fg="black", command=lambda: command(cmd.get()))
 	sendButton.grid(row=1, column=2, padx=5, pady=5, sticky=N + S + E + W)
 
 	A_Button = Button(window, text="A", bg='grey', fg="white")  
@@ -224,6 +239,7 @@ def window():
 # runtime variables
 
 responseTimer = 0
+alarmTimer = 0
 
 applicationRunning = True
 receiverConnected = False
@@ -231,6 +247,7 @@ receiverReady = False
 satteliteConnected = False
 satteliteWaiting = False
 satteliteError = False
+alarmOn = False
 
 # receiver connection
 
@@ -324,10 +341,8 @@ while applicationRunning and receiverConnected:
 					case "R":
 						satteliteWaiting = False
 					case "ERROR":
-						send("ARM:1", False)
 						satteliteError = True
 					case _:
-						send("ARM:0", False)
 						satteliteError = False
 						data = line.split(';')
 						for entry in data:
@@ -370,7 +385,21 @@ while applicationRunning and receiverConnected:
 		except:
 			print(f"could not decode input")
 
-	if(satteliteConnected and not satteliteError):
-		colour = "white"
-	else:
-		colour = "red"
+	if alarmTimer >= 1:
+		ATlen = len(stateAVGTMP.y)
+		if(ATlen > 3):
+			c1 = stateAVGTMP.y[ATlen - 1] > tmpAlarm
+			c2 = stateAVGTMP.y[ATlen - 2] > tmpAlarm
+			c3 = stateAVGTMP.y[ATlen - 3] > tmpAlarm
+			if(c1 and c2 and c3):
+				alarmOn = True
+			else:
+				alarmOn = False
+		alarmTimer = 0
+
+		if(satteliteConnected and not satteliteError and not alarmOn):
+			send("ARM:0", False)
+			colour = "white"
+		else:
+			send("ARM:1", False)
+			colour = "red"
