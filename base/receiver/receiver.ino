@@ -11,23 +11,34 @@ void setup() {
 void loop() {
   Serial.println("{RDY}");
   String cmd = Serial.readString();
+  
+  String buf[10];
+  int index = 0;
+  int count = 0;
+
+  if(cmd != "") {
+    while(index < cmd.length() - 1) {
+        int newIndex = cmd.indexOf(';', index);
+        buf[count] = cmd.substring(index, newIndex);
+        index = newIndex + 1;
+        count++;
+    };
+
+    for(int i = 0; i < count; i++) {
+      if(buf[i] == "ARM:1") {
+          digitalWrite(13, HIGH);
+      } else if(buf[i] == "ARM:0") {
+          digitalWrite(13, LOW);
+      } else {
+        SAT.println(buf[i]);
+      };
+    };
+  };
 
   if (SAT.available()) {
     digitalWrite(12, HIGH);
-      String data = SAT.readString();
+      String data = SAT.readString();  
       Serial.print(data);
-      
-      data.trim();
-      if(data == "{ERROR}") {
-        digitalWrite(13, HIGH);
-        alarm();
-      } else {
-        digitalWrite(13, LOW);
-      }
-        
     digitalWrite(12, LOW);
-  }
-  
-  if(cmd != "") 
-    SAT.println(cmd);
-}
+  };
+};
