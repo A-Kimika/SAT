@@ -1,10 +1,12 @@
 # SAT Grupo 2
 
-## [VIDEO](https://drive.google.com/file/d/1hvOzGaZAGr3G5iYpnstDdow7pwcVJ2ZW/view?usp=sharing)
+### Video V1
+[VIDEO](https://drive.google.com/file/d/1hvOzGaZAGr3G5iYpnstDdow7pwcVJ2ZW/view?usp=sharing)
+
+### Video V2
+[VIDEO](...)
 
 ## INTRODUCCIÓN
-
-Somos el Grupo dos, compuesto por Aleksandr Kolesnikov y Sergi Fernández.
 
 El proyecto se compone de una placa arduino conectada a un ordenador todo considerado el satlite y otra placa conectado a otro ordenador que en este caso es considerado base.
 
@@ -17,14 +19,35 @@ El satelite se encarga de contener los datos de sensores y mediante el lenguaje 
 
 ## FUNCIONES
 
-Las funciones disponibles para esta primera versión son las siguientes:
-- Start: Empezar/Reanudar la transmisión de datos
-- Stop: Detener la transmisión de datos
-- Plot: Graficar los datos de humedad y temperatura detectados por el sensor DHT
+Las funciones disponibles son las siguientes:
+- Captura y transmisión de datos de temperatura, humedad y distancia
+- Control de dirección del sensor de distancia
+- Alarma de temperatura mayor que un valor determinado
 
-## Interfaz
+## INTERFAZ
 
-La interfaz contiene una grafica en la primera fila que se extiende hasta el final.
-La segunda contiene una serie de 3 botones donde se encuentran el Start (verde con texto Start en blanco), Stop (rojo con texto Stop en blanco) y Temperature/Humidity (azul con texto en blanco, alterna la grafica que se observa).
+La interfaz contiene una lista de gráficas y una ventana con la lista de comandos disponibles.
 
-Además, en caso de error, el fondo de la gráfica pasará a ser rojo y en el circuito un led rojo se encenderá. De la misma manera cuando todo funcione correctamente la gráfica permanecerá de color blanco y en el circuito se encenderá un led verde al recibir datos en el circuito de la base y un led verde se encenderá al enviar datos en el circuito del Satelite. 
+## PROTOCOLO
+
+...
+
+## USO
+
+para abrir la programa que contiene el interfaz gráfico:
+
+```
+python ./base/ui.py
+```
+
+Es posible que sera necesario cambiar el port de comunicación:
+
+```
+device = '/dev/ttyACM0'
+```
+
+El port actual se puede ver en la implicación Arduino IDE
+
+## TEST
+
+Para comprobar el funcionamiento sin el segundo Arduino se puede usar la programa en /tests/base/sattelite-test para simular la conexión con un satélite
