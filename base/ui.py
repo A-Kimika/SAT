@@ -124,11 +124,13 @@ def loop(win, start, stop, send):
 	global satteliteWaiting
 	global responseTimer
 	global alarmTimer
+	global errorTimer
 	global pt
 
 	dt = (time.monotonic() - pt)
 	responseTimer += dt
 	alarmTimer += dt
+	errorTimer += dt
 	pt = time.monotonic()
 
 	if receiverReady and not satteliteWaiting:
@@ -148,6 +150,9 @@ def command(cmd):
 	global tmpAlarm
 	if cmd.startswith("setPeriod:"):
 		send("V:" + cmd.strip("setPeriod:"), True)
+
+	if cmd.startswith("setAngle:"):
+		send("O:" + cmd.strip("setAngle:"), True)
 
 	if cmd.startswith("setAlarm.T:"):
 		tmpAlarm = float(cmd.strip("setAlarm.T:"))
@@ -193,7 +198,7 @@ def window():
 	cmd = Entry()
 	cmd.grid(row=1, column=0, columnspan=2, padx=5, pady=5, sticky=N + S + E + W)
 		
-	infoLabel = Label(window, text = "Commands:\n\nsetPeriod:'n' (secs)\nsetAlarm.T:'n' (C°)", font=("Courier", 12))
+	infoLabel = Label(window, text = "Commands:\n\nsetPeriod:'n' (secs)\nsetAlarm.T:'n' (C°)\nsetAngle:'n' (°)", font=("Courier", 12))
 	infoLabel.grid(row=0, column=3, rowspan=4, padx=5, pady=5, sticky=N)
 
 	startButton = Button(window, text="START", bg='green', fg="white",command=lambda: send("SS:1", True))
@@ -246,6 +251,7 @@ def window():
 
 responseTimer = 0
 alarmTimer = 0
+errorTimer = 0
 
 applicationRunning = True
 receiverConnected = False
@@ -325,12 +331,17 @@ currentState = stateTMP
 # main communication loop
 
 while applicationRunning and receiverConnected:
+	sendPeriod = 5
+
 	if responseTimer >= 5:
 		send("ARM:1", False)
 		print("Sattelite response timeout")
 		satteliteConnected = False
 		satteliteWaiting = False
 		responseTimer = 0
+	
+	if errorTimer >= sendPeriod:
+		satteliteError = False
 
 	if mySerial.in_waiting > 0:
 		try:
@@ -348,8 +359,8 @@ while applicationRunning and receiverConnected:
 						satteliteWaiting = False
 					case "ERROR":
 						satteliteError = True
+						errorTimer = 0
 					case _:
-						satteliteError = False
 						data = line.split(';')
 						for entry in data:
 							match entry[0]:

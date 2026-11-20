@@ -35,7 +35,6 @@ void loop() {
     };
   };
 
-
   if (SAT.available()) {
     digitalWrite(12, HIGH);
       String data = SAT.readString();  
