@@ -47,15 +47,16 @@ def setAvgState(btn):
 	
 	if avgCalculation == "local":
 		avgCalculation = "remote"
-		send("CMT:1",True)
+		send("CTM:1",True)
 		btn.configure(text = "AVERAGE (remote)", bg='orange')
 
 	elif avgCalculation == "remote":
 		avgCalculation = "local"	
-		send("CMT:0",True)
+		send("CTM:0",True)
 		btn.configure(text = "AVERAGE   (local)", bg='blue')
 
 # average of the last 10 values
+# accepts the plot data for which to calculate the average
 
 def avgPlot(pltState):
 	s = 0
@@ -103,7 +104,11 @@ def plot(args):
 		args.ax.set_yticks(yval)
 		
 		args.ax.set_xlim(0, xlim)
-		xval = range(0, xlim, 10)
+
+		# TODO
+		# xval = range(0, xlim, 10)
+		
+		xval = [0, xlim]
 		args.ax.set_xticks(xval)
 
 		args.line.set_data(x, y)
@@ -112,6 +117,7 @@ def plot(args):
 	args.win.after(16, lambda: plot(args))
 
 # main window loop
+# accepts the UI elements that need updating
 
 def loop(win, start, stop, send):
 	global receiverReady
@@ -136,7 +142,7 @@ def loop(win, start, stop, send):
 
 	win.after(16, lambda: loop(win, start, stop, send))
 
-# handle command line input
+# handle command line input, accepts the command to execute
 
 def command(cmd):
 	global tmpAlarm
@@ -187,7 +193,7 @@ def window():
 	cmd = Entry()
 	cmd.grid(row=1, column=0, columnspan=2, padx=5, pady=5, sticky=N + S + E + W)
 		
-	infoLabel = Label(window, text = "Commands:\nsetPeriod:'n' (secs)\nsetAlarm.T:'n' (C°)", font=("Courier", 8))
+	infoLabel = Label(window, text = "Commands:\n\nsetPeriod:'n' (secs)\nsetAlarm.T:'n' (C°)", font=("Courier", 12))
 	infoLabel.grid(row=0, column=3, rowspan=4, padx=5, pady=5, sticky=N)
 
 	startButton = Button(window, text="START", bg='green', fg="white",command=lambda: send("SS:1", True))
