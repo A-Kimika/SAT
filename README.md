@@ -1,10 +1,8 @@
 # SAT Grupo 2
 
-### Video V1
-[VIDEO](https://drive.google.com/file/d/1hvOzGaZAGr3G5iYpnstDdow7pwcVJ2ZW/view?usp=sharing)
+### [Video V1](https://drive.google.com/file/d/1hvOzGaZAGr3G5iYpnstDdow7pwcVJ2ZW/view?usp=sharing)
 
-### Video V2
-[VIDEO](...)
+### [Video V2](...)
 
 ## INTRODUCCIÓN
 
