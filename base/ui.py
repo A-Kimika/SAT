@@ -127,6 +127,8 @@ def loop(win, start, stop, send):
 	global errorTimer
 	global pt
 
+	win.configure(background='white')
+
 	dt = (time.monotonic() - pt)
 	responseTimer += dt
 	alarmTimer += dt
@@ -184,6 +186,8 @@ def window():
 	window.title('uwu')
 	window.geometry("800x600")
 	window.minsize(800, 600)
+
+	window.configure(background='white')
 
 	window.rowconfigure(0, weight=2, minsize = 400)
 	window.rowconfigure(1, weight=1, minsize = 40)
@@ -419,4 +423,4 @@ while applicationRunning and receiverConnected:
 			colour = "white"
 		else:
 			send("ARM:1", False)
-			colour = "red"
+			colour = "LightPink"
