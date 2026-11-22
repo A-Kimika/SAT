@@ -2,7 +2,7 @@
 
 ### [Video V1](https://drive.google.com/file/d/1hvOzGaZAGr3G5iYpnstDdow7pwcVJ2ZW/view?usp=sharing)
 
-### [Video V2](...)
+### [Video V2](https://drive.google.com/file/d/1JZbxgElAuV3N5PwONAfIJCs6YoMQGQos/view?usp=sharing)
 
 ## INTRODUCCIÓN
 
