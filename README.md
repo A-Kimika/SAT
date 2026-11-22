@@ -26,9 +26,13 @@ Las funciones disponibles son las siguientes:
 
 La interfaz contiene una lista de gráficas y una ventana con la lista de comandos disponibles.
 
-## PROTOCOLO
+## PROTOCOLO (Acción | Comando | Valores | Descripción)
 
-...
+- Empezar y Parar:	SS	| 1 o 0	| Si es 1 la transmisión continuará, si es 0 se detendrá	
+- Cambiar velocidad de Transmisión:	V |	x (segundos)	| La diferencia de tiempo entre mensaje y mensaje variará	
+- Cambiar orientación del satélite:	O	| 0-180º	| Cambiar la orientación del satelite	
+- Cambiar frecuencia de Transmisión:	B	| x (baudios)	| Cambia la frecuencia en Baudios a la que se efectua la transmisión de datos	
+- Calcular Temperatura Media:	CTM	| 1 o 0	| Si es un 1 el satelite se encargará de calcular la temperatura media, si es 0 no	
 
 ## USO
 
