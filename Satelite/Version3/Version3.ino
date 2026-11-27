@@ -18,7 +18,7 @@ SoftwareSerial Base(10, 11); // RX, TX (Rojo, Azul)
   //Booleans
     bool transmision = false;
     bool LimiteSuperado = false;
-    int CalcularEnSatelite = 0;
+    bool CalcularEnSatelite = false;
     bool Rotar = false;
   //Int
     int i;
@@ -50,13 +50,13 @@ SoftwareSerial Base(10, 11); // RX, TX (Rojo, Azul)
     float Tanteriores[10] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
     float Tmedia = 0;
     float TmediasAnteriores[2] = {0, 0};
-    float LimiteUsuario = 26.00;
+    float LimiteUsuario = 46.00;
   //Strings
     String comandos[10];
     String valores[10];
 
 //Funciones
-void start() 
+void start()  //Inicia la transmisión de datos
 {
   Base.println ("{R}");
   transmision = true;
@@ -64,36 +64,36 @@ void start()
   EsperaSensorDistancia = millis();
 }
 
-void stop()
+void stop() //Detiene la transmisión de datos
 {
   Base.println ("{R}");
   transmision = false;
   Serial.println("S2");
 }
 
-void RecibirMensaje()
-{
+void RecibirMensaje() //Lee los mensajes de la base
+{ 
   Serial.println ("Recibo");
   String data = Base.readString();
-  data.trim();
+  data.trim(); 
   Serial.println(data);
   int principio = 0;
-  i = 1;
+  i = 1; 
 
   while (principio < data.length() && i<10) 
   { 
     //Comando
-    int posicion = data.indexOf(':', principio);
+    int posicion = data.indexOf(':', principio); 
     if (posicion == -1) break;
     
     comandos[i] = data.substring(principio, posicion);
     Serial.println(comandos[i]);
 
-    //Valor
+    //Valor 
     principio = posicion + 1;
     posicion = data.indexOf(':', principio);
-    if (posicion == -1){
-    valores[i] = data.substring(principio);
+    if (posicion == -1){ 
+    valores[i] = data.substring(principio); 
     Serial.println(valores[i]);
     principio = data.length();
     }
@@ -106,32 +106,32 @@ void RecibirMensaje()
   }
 }
 
-void InterpretarComandos()
+void InterpretarComandos() //Utiliza los mensajes de la base para llevar a cabo los comandos
 {
   //for (int j = 1; j < i; j++)
   
-  if (comandos[1] == "SS")
+  if (comandos[1] == "SS") //Transmision
   {
     StartStop(valores[1]);
   }
   
-  else if (comandos[1] == "V")
+  else if (comandos[1] == "V") //Velocidad de intercambio de datos
   {
     CambiarVTr(valores[1]);
   }
   
-  else if (comandos[1] == "O")
+  else if (comandos[1] == "O") //Orientación sensor de distancia
   {
-    IniciarRotacion(valores[1]); // <-- Solo cambiado aquí para validar e iniciar el giro
+    IniciarRotacion(valores[1]);
   }
 
-  else if (comandos[1] == "CTM")
+  else if (comandos[1] == "CTM") //Calcular en satélite
   {
-    Base.println("{R}");
-    if (valores[1] = '1')
-      CalcularEnSatelite = 1;
-    else if (valores[1] = '0')
-      CalcularEnSatelite = 0;
+    Base.println("{R}");  
+    if (valores[1] == '1')
+      CalcularEnSatelite = true;
+    else if (valores[1] == '0')
+      CalcularEnSatelite = false;
     else
       Base.println ("Valor inválido");
   }
@@ -147,7 +147,7 @@ void InterpretarComandos()
 
 }
 
-void StartStop(String valor)
+void StartStop(String valor) //Se encarga de, según el valor del comando, llamar a start o stop
 {
   if (valor == "1")
     start();
@@ -155,15 +155,15 @@ void StartStop(String valor)
     stop();
 }
 
-void CambiarVTr(String valor)
+void CambiarVTr(String valor) //Cambia la velocidad de intercambio de datos
 {
-  if (valor.toInt() > 1)
+  if (valor.toInt() >= 1)
     VTransmision = valor.toFloat()*1000UL;
     Serial.println(VTransmision); 
     Base.println("{R}");
 }
 
-// --- FUNCIONES DEL SERVO ---
+//Funciones del Servo
 void IniciarRotacion(String valor)
 {
   float nuevoAngulo = valor.toFloat();
@@ -200,9 +200,10 @@ void CambiarOrientacion()
   }
 }
 
-void LeerSensorDHT()
+void LeerSensorDHT() //Lee la información del sensor de humedad y temperatura
 {
   h = dht.readHumidity();
+
   t = dht.readTemperature();
    if (!isnan(t))
   {
@@ -211,7 +212,7 @@ void LeerSensorDHT()
   }
 }
 
-void CalcularTemperaturaMedia()
+void CalcularTemperaturaMedia() //Calcula la temperatura media 
 {
   Serial.print("CalcularEnSatelite: ");
   Serial.println(CalcularEnSatelite);
@@ -244,7 +245,7 @@ void CalcularTemperaturaMedia()
     LimiteSuperado = false;
 } 
 
-void EnviarDHT()
+void EnviarDHT() //Función lógica que envia los datos
 {
   digitalWrite(led1, HIGH);
   Base.print("{H:");
@@ -256,24 +257,19 @@ void EnviarDHT()
   UltimoEnvio = millis();
 }
 
-void Disponible()
+void Disponible() //Heartbeat
 {
   Base.println("{T}");
   UltimaEspera = millis();
 }
 
-void RecibiendoTransmision()
-{ 
-  Base.println("{T}");
-}
-
-void ErrorLimiteSuperado()
+void ErrorLimiteSuperado() //En caso de que las 3 últimas temperaturas medias superen el máximo, se activa
 {
   Base.println ("{ERROR}");
   EsperaLimiteSuperado = millis();
 }
 
-void ErrorDeteccion()
+void ErrorDeteccion() //Si la infomación del sensor DHT es incorrecta o no hay envia error
 {
   Base.println("{ERROR}"); 
   UltimoEnvio = millis();
@@ -295,7 +291,7 @@ void setup()
   myServo.write(90);
 }
 
-void CalcularDistancia ()
+void CalcularDistancia () //Función que calcula la distancia entre un objeto y el sensor
 {
   digitalWrite (TRIG, HIGH);
   if (millis() - EsperaSensorDistancia > 1000)
@@ -306,6 +302,8 @@ void CalcularDistancia ()
     Base.print (Distancia);
     Base.println ("}");
     EsperaSensorDistancia = millis();  
+    if ((Distancia <= D_men) && (Distancia > 0))
+      D_men = Distancia;
 }
 
 void loop() 
@@ -339,7 +337,7 @@ void loop()
     LeerSensorDHT();
     CalcularDistancia();
 
-    if (CalcularEnSatelite == 1)
+    if (CalcularEnSatelite == true)
       CalcularTemperaturaMedia();
 
     if (isnan(h) || isnan(t)) //Comprovación y aviso de error de detección
